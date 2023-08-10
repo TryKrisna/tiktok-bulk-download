@@ -80,41 +80,23 @@ const generateUrlProfile = (username) => {
 //     });
 // }
 
-// const downloadMediaFromList = async (list) => {
-//     const folder = "downloads/"
-//     list.forEach((item) => {
-//         const fileName = `${item.title==""?item.id:item.title}.mp4`
-//         const downloadFile = fetch(item.url)
-//         const file = fs.createWriteStream(folder + fileName)
-        
-//         downloadFile.then(res => {
-//             res.body.pipe(file)
-//             console.log(file.path + ' Saved!')
-//             // file.on("finish", () => {
-//             //     file.close()
-//             //     resolve()
-//             // });
-//             file.on("error", (err) => reject(err));
-//         });
-//     });
-// }
-// One by one
-
-const downloadMediaFromList = async (item,username) => {
-    const path = './' + username + '/'; // location to save videos
+const downloadMediaFromList = async (list) => {
+    const folder = "downloads/"
+    list.forEach((item) => {
         const fileName = `${item.title==""?item.id:item.title}.mp4`
         const downloadFile = fetch(item.url)
-        const file = fs.createWriteStream(path + fileName)
+        const file = fs.createWriteStream(folder + fileName)
         
         downloadFile.then(res => {
             res.body.pipe(file)
-            file.on("finish", () => {
-                file.close()
-                resolve()
-            });
+            console.log(file.path + ' Saved!')
+            // file.on("finish", () => {
+            //     file.close()
+            //     resolve()
+            // });
             file.on("error", (err) => reject(err));
         });
-    // });
+    });
 }
 
 
@@ -186,12 +168,13 @@ const getListVideoByUsername = async (username) => {
         });
         console.log(chalk.green(`[*] ${listVideo.length} video found`))
         previousHeight = await page.evaluate("document.body.scrollHeight");
+        // yield sleep(2000);
         await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
         await page.waitForFunction(`document.body.scrollHeight > ${previousHeight}`, {timeout: 20000})
         // 20000 I update from 10000
         .catch((e) => {
+            console.log("err",e);
             console.log(chalk.red("[X] No more video found"));
-            console.log(chalk.blue("================================ Start Downloading.... ==================================="))
             console.log(chalk.green(`[*] Total video found: ${listVideo.length}`))
             loop = false
         });
@@ -223,23 +206,16 @@ const getIdVideo = (url) => {
 }
 
 (async () => {    
-    // const header = "\r\n \/$$$$$$$$ \/$$$$$$ \/$$   \/$$ \/$$$$$$$$ \/$$$$$$  \/$$   \/$$       \/$$$$$$$   \/$$$$$$  \/$$      \/$$ \/$$   \/$$ \/$$        \/$$$$$$   \/$$$$$$  \/$$$$$$$  \/$$$$$$$$ \/$$$$$$$ \r\n|__  $$__\/|_  $$_\/| $$  \/$$\/|__  $$__\/\/$$__  $$| $$  \/$$\/      | $$__  $$ \/$$__  $$| $$  \/$ | $$| $$$ | $$| $$       \/$$__  $$ \/$$__  $$| $$__  $$| $$_____\/| $$__  $$\r\n   | $$     | $$  | $$ \/$$\/    | $$  | $$  \\ $$| $$ \/$$\/       | $$  \\ $$| $$  \\ $$| $$ \/$$$| $$| $$$$| $$| $$      | $$  \\ $$| $$  \\ $$| $$  \\ $$| $$      | $$  \\ $$\r\n   | $$     | $$  | $$$$$\/     | $$  | $$  | $$| $$$$$\/        | $$  | $$| $$  | $$| $$\/$$ $$ $$| $$ $$ $$| $$      | $$  | $$| $$$$$$$$| $$  | $$| $$$$$   | $$$$$$$\/\r\n   | $$     | $$  | $$  $$     | $$  | $$  | $$| $$  $$        | $$  | $$| $$  | $$| $$$$_  $$$$| $$  $$$$| $$      | $$  | $$| $$__  $$| $$  | $$| $$__\/   | $$__  $$\r\n   | $$     | $$  | $$\\  $$    | $$  | $$  | $$| $$\\  $$       | $$  | $$| $$  | $$| $$$\/ \\  $$$| $$\\  $$$| $$      | $$  | $$| $$  | $$| $$  | $$| $$      | $$  \\ $$\r\n   | $$    \/$$$$$$| $$ \\  $$   | $$  |  $$$$$$\/| $$ \\  $$      | $$$$$$$\/|  $$$$$$\/| $$\/   \\  $$| $$ \\  $$| $$$$$$$$|  $$$$$$\/| $$  | $$| $$$$$$$\/| $$$$$$$$| $$  | $$\r\n   |__\/   |______\/|__\/  \\__\/   |__\/   \\______\/ |__\/  \\__\/      |_______\/  \\______\/ |__\/     \\__\/|__\/  \\__\/|________\/ \\______\/ |__\/  |__\/|_______\/ |________\/|__\/  |__\/\r\n\n by n0l3r (https://github.com/n0l3r)\n"
-    // const header = "__  $$__/|_  $$_/| $$  /$$/|__  $$__\/\/$$__  $$| $$  /$$/        | $$__  $$ /$$__  $$| $$  /$ | $$| $$$ | $$| $$       /$$__  $$ /$$__  $$| $$__  $$| $$_____/| $$__  $$ /  \ | $$     | $$  | $$ /$$/    | $$  | $$  \ $$| $$ /$$/       | $$  \ $$| $$  \ $$| $$ /$$$| $$| $$$$| $$| $$      | $$  \ $$| $$  \ $$| $$  \ $$| $$      | $$  \ $$|  $$ | $$     | $$  | $$$$$/     | $$  | $$  | $$| $$$$$/        | $$  | $$| $$  | $$| $$\/$$ $$ $$| $$ $$ $$| $$      | $$  | $$| $$$$$$$$| $$  | $$| $$$$$   | $$$$$$$/\r| $$ | $$     | $$  | $$  $$     | $$  | $$  | $$| $$  $$        | $$  | $$| $$  | $$| $$$$_  $$$$| $$  $$$$| $$      | $$  | $$| $$__  $$| $$  | $$| $$__/   | $$__  $$| $$ | $$     | $$  | $$\  $$    | $$  | $$  | $$| $$\  $$       | $$  | $$| $$  | $$| $$$/ \  $$$| $$\  $$$| $$      | $$  | $$| $$  | $$| $$  | $$| $$      | $$  \ $$|  $$| $$    /$$$$$$| $$ \  $$   | $$  |  $$$$$$/| $$ \  $$      | $$$$$$$/|  $$$$$$/| $$/   \  $$| $$ \  $$| $$$$$$$$|  $$$$$$/| $$  | $$| $$$$$$$/| $$$$$$$$| $$  | $$_/ |__/   |_____/|__/  \/   |/   \/ |/  \/      |_____/  \/ |/     \/|/  \/|______/ \/ |/  |/|_____/ |________/|__/  |__/"
-   
-    const header ="welcome to lazy tool"
-    console.log(chalk.yellow("========================================================================================"))
-    console.log(chalk.blue("================================",header,"==================================="))
-    console.log(chalk.yellow("========================================================================================"))
-
+    const header = "\r\n \/$$$$$$$$ \/$$$$$$ \/$$   \/$$ \/$$$$$$$$ \/$$$$$$  \/$$   \/$$       \/$$$$$$$   \/$$$$$$  \/$$      \/$$ \/$$   \/$$ \/$$        \/$$$$$$   \/$$$$$$  \/$$$$$$$  \/$$$$$$$$ \/$$$$$$$ \r\n|__  $$__\/|_  $$_\/| $$  \/$$\/|__  $$__\/\/$$__  $$| $$  \/$$\/      | $$__  $$ \/$$__  $$| $$  \/$ | $$| $$$ | $$| $$       \/$$__  $$ \/$$__  $$| $$__  $$| $$_____\/| $$__  $$\r\n   | $$     | $$  | $$ \/$$\/    | $$  | $$  \\ $$| $$ \/$$\/       | $$  \\ $$| $$  \\ $$| $$ \/$$$| $$| $$$$| $$| $$      | $$  \\ $$| $$  \\ $$| $$  \\ $$| $$      | $$  \\ $$\r\n   | $$     | $$  | $$$$$\/     | $$  | $$  | $$| $$$$$\/        | $$  | $$| $$  | $$| $$\/$$ $$ $$| $$ $$ $$| $$      | $$  | $$| $$$$$$$$| $$  | $$| $$$$$   | $$$$$$$\/\r\n   | $$     | $$  | $$  $$     | $$  | $$  | $$| $$  $$        | $$  | $$| $$  | $$| $$$$_  $$$$| $$  $$$$| $$      | $$  | $$| $$__  $$| $$  | $$| $$__\/   | $$__  $$\r\n   | $$     | $$  | $$\\  $$    | $$  | $$  | $$| $$\\  $$       | $$  | $$| $$  | $$| $$$\/ \\  $$$| $$\\  $$$| $$      | $$  | $$| $$  | $$| $$  | $$| $$      | $$  \\ $$\r\n   | $$    \/$$$$$$| $$ \\  $$   | $$  |  $$$$$$\/| $$ \\  $$      | $$$$$$$\/|  $$$$$$\/| $$\/   \\  $$| $$ \\  $$| $$$$$$$$|  $$$$$$\/| $$  | $$| $$$$$$$\/| $$$$$$$$| $$  | $$\r\n   |__\/   |______\/|__\/  \\__\/   |__\/   \\______\/ |__\/  \\__\/      |_______\/  \\______\/ |__\/     \\__\/|__\/  \\__\/|________\/ \\______\/ |__\/  |__\/|_______\/ |________\/|__\/  |__\/\r\n\n by n0l3r (https://github.com/n0l3r)\n"
+    console.log(chalk.blue(header))
     const choice = await getChoice();
     var listVideo = [];
     var listMedia = [];
-    let username ="";
     if (choice.choice === "Mass Download (Username)") {
         const usernameInput = await getInput("Enter the username with @ (e.g. @username) : ");
-         username = usernameInput.input;
+        const username = usernameInput.input;
         listVideo = await getListVideoByUsername(username);
-        // console.log("listVideo",listVideo);
+        console.log("listVideo",listVideo);
         if(listVideo.length === 0) {
             console.log(chalk.yellow("[!] Error: No video found"));
             exit();
@@ -280,49 +256,21 @@ const getIdVideo = (url) => {
     console.log(chalk.green(`[!] Found ${listVideo.length} video`));
 
 
-// create file folder
-const fs = require('fs');
-
-const folderPath ='./' + username + '/';
-// path = './' + username + '/'
-fs.access(folderPath, fs.constants.F_OK, (err) => {
-  if (err) {
-    // console.error(`${folderPath} does not exist.`);
-    fs.mkdir(folderPath, (err) => {
-      if (err) {
-        console.error('Failed to create folder:', err);
-        return;
-      }
-    //   console.log(`${folderPath} created successfully.`);
-    });
-    return;
-  }
-//   console.log(`${folderPath} already exists.`);
-});
-
-
-
     for(var i = 0; i < listVideo.length; i++){
-        console.log(chalk.yellow(`[*] Downloading video ${i+1} of ${listVideo.length}`));
+        console.log(chalk.green(`[*] Downloading video ${i+1} of ${listVideo.length}`));
         console.log(chalk.green(`[*] URL: ${listVideo[i]}`));
         var data = (choice.type == "With Watermark") ? await getVideoWM(listVideo[i]) : await getVideoNoWM(listVideo[i]);
-        downloadMediaFromList(data,username)
+
+        listMedia.push(data);
+    }
+
+    downloadMediaFromList(listMedia)
         .then(() => {
-            console.log(chalk.green("[+] Saved !"));
+            console.log(chalk.green("[+] Downloaded successfully"));
         })
         .catch(err => {
             console.log(chalk.red("[X] Error: " + err));
     });
-        // listMedia.push(data);
-    }
-
-    // downloadMediaFromList(listMedia)
-    //     .then(() => {
-    //         console.log(chalk.green("[+] Downloaded successfully"));
-    //     })
-    //     .catch(err => {
-    //         console.log(chalk.red("[X] Error: " + err));
-    // });
     
 
 })();
