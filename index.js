@@ -11,7 +11,7 @@ const puppeteer = require("puppeteer");
 const { exit } = require("process");
 const { resolve } = require("path");
 const { reject } = require("lodash");
-const {Headers} = require('node-fetch');
+const { Headers } = require('node-fetch');
 const readline = require('readline');
 
 
@@ -36,8 +36,8 @@ const getChoice = () => new Promise((resolve, reject) => {
             choices: ["With Watermark", "Without Watermark"]
         }
     ])
-    .then(res => resolve(res))
-    .catch(err => reject(err));
+        .then(res => resolve(res))
+        .catch(err => reject(err));
 });
 
 const getInput = (message) => new Promise((resolve, reject) => {
@@ -48,8 +48,8 @@ const getInput = (message) => new Promise((resolve, reject) => {
             message: message
         }
     ])
-    .then(res => resolve(res))
-    .catch(err => reject(err));
+        .then(res => resolve(res))
+        .catch(err => reject(err));
 });
 
 const generateUrlProfile = (username) => {
@@ -68,7 +68,7 @@ const generateUrlProfile = (username) => {
 //         const fileName = `${item.id}.mp4`
 //         const downloadFile = fetch(item.url)
 //         const file = fs.createWriteStream(folder + fileName)
-        
+
 //         downloadFile.then(res => {
 //             res.body.pipe(file)
 //             file.on("finish", () => {
@@ -86,7 +86,7 @@ const generateUrlProfile = (username) => {
 //         const fileName = `${item.title==""?item.id:item.title}.mp4`
 //         const downloadFile = fetch(item.url)
 //         const file = fs.createWriteStream(folder + fileName)
-        
+
 //         downloadFile.then(res => {
 //             res.body.pipe(file)
 //             console.log(file.path + ' Saved!')
@@ -99,21 +99,44 @@ const generateUrlProfile = (username) => {
 //     });
 // }
 // One by one
-
-const downloadMediaFromList = async (item,username) => {
+const emojiRegex = require('emoji-regex');
+function convertEmojiToText(text) {
+    // Create a regular expression to match emojis
+    const regex = emojiRegex();
+  
+    // Replace emojis with a blank space
+    return text.replace(regex, '');
+  }
+const downloadMediaFromList = async (item, username) => {
     const path = './' + username + '/'; // location to save videos
-        const fileName = `${item.title==""?item.id:item.title}.mp4`
-        const downloadFile = fetch(item.url)
-        const file = fs.createWriteStream(path + fileName)
-        
-        downloadFile.then(res => {
-            res.body.pipe(file)
-            file.on("finish", () => {
-                file.close()
-                resolve()
-            });
-            file.on("error", (err) => reject(err));
+    // const fileName = `${item.id}.mp4`
+    // const fileName = `${item.title==""?item.id:item.title.split("#")[0]+item.id}.mp4`
+    // let title = item.title;
+    // const title = item.title;
+    const maxLength = 50;
+    const shortenedText = item.title.substring(0, maxLength);
+    const fileName = shortenedText == "" ? item.id : shortenedText + item.id.substring(0, 3)
+
+    const convertedText = convertEmojiToText(fileName);
+    // console.log("before",fileName);
+    // console.log("after",convertedText);
+    try{
+    const downloadFile = fetch(item.url)
+    const file = fs.createWriteStream(path + `${fileName.replace(/[^#a-zA-Z0-9\s]+/g, "")}.mp4`)
+    // const file = fs.createWriteStream(path + fileName.replace(/\?/g, "!").replace(/"/g, '').replace(/|/g, ''))
+
+    downloadFile.then(res => {
+        res.body.pipe(file)
+        file.on("finish", () => {
+            file.close()
+            resolve()
         });
+        // file.on("error", (err) => reject(err));
+    });
+}catch(e){
+    console.log("this is error",e);
+}
+    
     // });
 }
 
@@ -124,21 +147,21 @@ const getVideoWM = async (url) => {
     const API_URL = `https://api16-normal-c-useast1a.tiktokv.com/aweme/v1/feed/?aweme_id=${idVideo}`;
     const request = await fetch(API_URL, {
         method: "GET",
-        headers : headers
+        headers: headers
     });
     const body = await request.text();
-                try {
-                 var res = JSON.parse(body);
-                } catch (err) {
-                    console.error("Error:", err);
-                    console.error("Response body:", body);
-                }
-                const urlMedia = res.aweme_list[0].video.download_addr.url_list[0]
-                const data = {
-                    url: urlMedia,
-                    id: idVideo
-                }
-                return data
+    try {
+        var res = JSON.parse(body);
+    } catch (err) {
+        console.error("Error:", err);
+        console.error("Response body:", body);
+    }
+    const urlMedia = res.aweme_list[0].video.download_addr.url_list[0]
+    const data = {
+        url: urlMedia,
+        id: idVideo
+    }
+    return data
 }
 
 const getVideoNoWM = async (url) => {
@@ -146,24 +169,24 @@ const getVideoNoWM = async (url) => {
     const API_URL = `https://api16-normal-c-useast1a.tiktokv.com/aweme/v1/feed/?aweme_id=${idVideo}`;
     const request = await fetch(API_URL, {
         method: "GET",
-        headers : headers
+        headers: headers
     });
     const body = await request.text();
-                try {
-                 var res = JSON.parse(body);
-                //  console.log("Here is res.aweme_list[0].video",res.aweme_list[0].video);
-                } catch (err) {
-                    console.error("Error:", err);
-                    console.error("Response body:", body);
-                }
-                const urlMedia = res.aweme_list[0].video.play_addr.url_list[0]
-                const title = res.aweme_list[0].desc
-                const data = {
-                    url: urlMedia,
-                    id: idVideo,
-                    title: title,
-                }
-                return data
+    try {
+        var res = JSON.parse(body);
+        //  console.log("Here is res.aweme_list[0].video",res.aweme_list[0].video);
+    } catch (err) {
+        console.error("Error:", err);
+        console.error("Response body:", body);
+    }
+    const urlMedia = res.aweme_list[0].video.play_addr.url_list[0]
+    const title = res.aweme_list[0].desc
+    const data = {
+        url: urlMedia,
+        id: idVideo,
+        title: title,
+    }
+    return data
 }
 
 const getListVideoByUsername = async (username) => {
@@ -174,12 +197,12 @@ const getListVideoByUsername = async (username) => {
     const page = await browser.newPage()
     page.setUserAgent(
         ""
-      );
+    );
     await page.goto(baseUrl)
     var listVideo = []
     console.log(chalk.green("[*] Getting list video from: " + username))
     var loop = true
-    while(loop) {
+    while (loop) {
         listVideo = await page.evaluate(() => {
             const listVideo = Array.from(document.querySelectorAll(".tiktok-16ou6xi-DivTagCardDesc > a"));
             return listVideo.map(item => item.getAttribute('href'));
@@ -187,21 +210,21 @@ const getListVideoByUsername = async (username) => {
         console.log(chalk.green(`[*] ${listVideo.length} video found`))
         previousHeight = await page.evaluate("document.body.scrollHeight");
         await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-        await page.waitForFunction(`document.body.scrollHeight > ${previousHeight}`, {timeout: 20000})
-        // 20000 I update from 10000
-        .catch((e) => {
-            console.log(chalk.red("[X] No more video found"));
-            console.log(chalk.blue("================================ Start Downloading.... ==================================="))
-            console.log(chalk.green(`[*] Total video found: ${listVideo.length}`))
-            loop = false
-        });
+        await page.waitForFunction(`document.body.scrollHeight > ${previousHeight}`, { timeout: 20000 })
+            // 20000 I update from 10000
+            .catch((e) => {
+                console.log(chalk.red("[X] No more video found"));
+                console.log(chalk.blue("================================ Start Downloading.... ==================================="))
+                console.log(chalk.green(`[*] Total video found: ${listVideo.length}`))
+                loop = false
+            });
         await new Promise((resolve) => setTimeout(resolve, 1000));
     }
     await browser.close()
     return listVideo
 }
 const getRedirectUrl = async (url) => {
-    if(url.includes("vm.tiktok.com") || url.includes("vt.tiktok.com")) {
+    if (url.includes("vm.tiktok.com") || url.includes("vt.tiktok.com")) {
         url = await fetch(url, {
             redirect: "follow",
             follow: 10,
@@ -214,7 +237,7 @@ const getRedirectUrl = async (url) => {
 
 const getIdVideo = (url) => {
     const matching = url.includes("/video/")
-    if(!matching){
+    if (!matching) {
         console.log(chalk.red("[X] Error: URL not found"));
         exit();
     }
@@ -222,25 +245,25 @@ const getIdVideo = (url) => {
     return (idVideo.length > 19) ? idVideo.substring(0, idVideo.indexOf("?")) : idVideo;
 }
 
-(async () => {    
+(async () => {
     // const header = "\r\n \/$$$$$$$$ \/$$$$$$ \/$$   \/$$ \/$$$$$$$$ \/$$$$$$  \/$$   \/$$       \/$$$$$$$   \/$$$$$$  \/$$      \/$$ \/$$   \/$$ \/$$        \/$$$$$$   \/$$$$$$  \/$$$$$$$  \/$$$$$$$$ \/$$$$$$$ \r\n|__  $$__\/|_  $$_\/| $$  \/$$\/|__  $$__\/\/$$__  $$| $$  \/$$\/      | $$__  $$ \/$$__  $$| $$  \/$ | $$| $$$ | $$| $$       \/$$__  $$ \/$$__  $$| $$__  $$| $$_____\/| $$__  $$\r\n   | $$     | $$  | $$ \/$$\/    | $$  | $$  \\ $$| $$ \/$$\/       | $$  \\ $$| $$  \\ $$| $$ \/$$$| $$| $$$$| $$| $$      | $$  \\ $$| $$  \\ $$| $$  \\ $$| $$      | $$  \\ $$\r\n   | $$     | $$  | $$$$$\/     | $$  | $$  | $$| $$$$$\/        | $$  | $$| $$  | $$| $$\/$$ $$ $$| $$ $$ $$| $$      | $$  | $$| $$$$$$$$| $$  | $$| $$$$$   | $$$$$$$\/\r\n   | $$     | $$  | $$  $$     | $$  | $$  | $$| $$  $$        | $$  | $$| $$  | $$| $$$$_  $$$$| $$  $$$$| $$      | $$  | $$| $$__  $$| $$  | $$| $$__\/   | $$__  $$\r\n   | $$     | $$  | $$\\  $$    | $$  | $$  | $$| $$\\  $$       | $$  | $$| $$  | $$| $$$\/ \\  $$$| $$\\  $$$| $$      | $$  | $$| $$  | $$| $$  | $$| $$      | $$  \\ $$\r\n   | $$    \/$$$$$$| $$ \\  $$   | $$  |  $$$$$$\/| $$ \\  $$      | $$$$$$$\/|  $$$$$$\/| $$\/   \\  $$| $$ \\  $$| $$$$$$$$|  $$$$$$\/| $$  | $$| $$$$$$$\/| $$$$$$$$| $$  | $$\r\n   |__\/   |______\/|__\/  \\__\/   |__\/   \\______\/ |__\/  \\__\/      |_______\/  \\______\/ |__\/     \\__\/|__\/  \\__\/|________\/ \\______\/ |__\/  |__\/|_______\/ |________\/|__\/  |__\/\r\n\n by n0l3r (https://github.com/n0l3r)\n"
     // const header = "__  $$__/|_  $$_/| $$  /$$/|__  $$__\/\/$$__  $$| $$  /$$/        | $$__  $$ /$$__  $$| $$  /$ | $$| $$$ | $$| $$       /$$__  $$ /$$__  $$| $$__  $$| $$_____/| $$__  $$ /  \ | $$     | $$  | $$ /$$/    | $$  | $$  \ $$| $$ /$$/       | $$  \ $$| $$  \ $$| $$ /$$$| $$| $$$$| $$| $$      | $$  \ $$| $$  \ $$| $$  \ $$| $$      | $$  \ $$|  $$ | $$     | $$  | $$$$$/     | $$  | $$  | $$| $$$$$/        | $$  | $$| $$  | $$| $$\/$$ $$ $$| $$ $$ $$| $$      | $$  | $$| $$$$$$$$| $$  | $$| $$$$$   | $$$$$$$/\r| $$ | $$     | $$  | $$  $$     | $$  | $$  | $$| $$  $$        | $$  | $$| $$  | $$| $$$$_  $$$$| $$  $$$$| $$      | $$  | $$| $$__  $$| $$  | $$| $$__/   | $$__  $$| $$ | $$     | $$  | $$\  $$    | $$  | $$  | $$| $$\  $$       | $$  | $$| $$  | $$| $$$/ \  $$$| $$\  $$$| $$      | $$  | $$| $$  | $$| $$  | $$| $$      | $$  \ $$|  $$| $$    /$$$$$$| $$ \  $$   | $$  |  $$$$$$/| $$ \  $$      | $$$$$$$/|  $$$$$$/| $$/   \  $$| $$ \  $$| $$$$$$$$|  $$$$$$/| $$  | $$| $$$$$$$/| $$$$$$$$| $$  | $$_/ |__/   |_____/|__/  \/   |/   \/ |/  \/      |_____/  \/ |/     \/|/  \/|______/ \/ |/  |/|_____/ |________/|__/  |__/"
-   
-    const header ="welcome to lazy tool"
+
+    const header = "welcome to lazy tool"
     console.log(chalk.yellow("========================================================================================"))
-    console.log(chalk.blue("================================",header,"==================================="))
+    console.log(chalk.blue("================================", header, "==================================="))
     console.log(chalk.yellow("========================================================================================"))
 
     const choice = await getChoice();
     var listVideo = [];
     var listMedia = [];
-    let username ="";
+    let username = "";
     if (choice.choice === "Mass Download (Username)") {
         const usernameInput = await getInput("Enter the username with @ (e.g. @username) : ");
-         username = usernameInput.input;
+        username = usernameInput.input;
         listVideo = await getListVideoByUsername(username);
         // console.log("listVideo",listVideo);
-        if(listVideo.length === 0) {
+        if (listVideo.length === 0) {
             console.log(chalk.yellow("[!] Error: No video found"));
             exit();
         }
@@ -250,7 +273,7 @@ const getIdVideo = (url) => {
         const fileInput = await getInput("Enter the file path : ");
         const file = fileInput.input;
 
-        if(!fs.existsSync(file)) {
+        if (!fs.existsSync(file)) {
             console.log(chalk.red("[X] Error: File not found"));
             exit();
         }
@@ -265,9 +288,9 @@ const getIdVideo = (url) => {
             urls.push(line);
             console.log(chalk.green(`[*] Found URL: ${line}`));
         }
-        
 
-        for(var i = 0; i < urls.length; i++) {
+
+        for (var i = 0; i < urls.length; i++) {
             const url = await getRedirectUrl(urls[i]);
             listVideo.push(url);
         }
@@ -280,39 +303,39 @@ const getIdVideo = (url) => {
     console.log(chalk.green(`[!] Found ${listVideo.length} video`));
 
 
-// create file folder
-const fs = require('fs');
+    // create file folder
+    const fs = require('fs');
 
-const folderPath ='./' + username + '/';
-// path = './' + username + '/'
-fs.access(folderPath, fs.constants.F_OK, (err) => {
-  if (err) {
-    // console.error(`${folderPath} does not exist.`);
-    fs.mkdir(folderPath, (err) => {
-      if (err) {
-        console.error('Failed to create folder:', err);
-        return;
-      }
-    //   console.log(`${folderPath} created successfully.`);
+    const folderPath = './' + username + '/';
+    // path = './' + username + '/'
+    fs.access(folderPath, fs.constants.F_OK, (err) => {
+        if (err) {
+            // console.error(`${folderPath} does not exist.`);
+            fs.mkdir(folderPath, (err) => {
+                if (err) {
+                    console.error('Failed to create folder:', err);
+                    return;
+                }
+                //   console.log(`${folderPath} created successfully.`);
+            });
+            return;
+        }
+        //   console.log(`${folderPath} already exists.`);
     });
-    return;
-  }
-//   console.log(`${folderPath} already exists.`);
-});
 
 
 
-    for(var i = 0; i < listVideo.length; i++){
-        console.log(chalk.yellow(`[*] Downloading video ${i+1} of ${listVideo.length}`));
+    for (var i = 0; i < listVideo.length; i++) {
+        console.log(chalk.yellow(`[*] Downloading video ${i + 1} of ${listVideo.length}`));
         console.log(chalk.green(`[*] URL: ${listVideo[i]}`));
         var data = (choice.type == "With Watermark") ? await getVideoWM(listVideo[i]) : await getVideoNoWM(listVideo[i]);
-        downloadMediaFromList(data,username)
-        .then(() => {
-            console.log(chalk.green("[+] Saved !"));
-        })
-        .catch(err => {
-            console.log(chalk.red("[X] Error: " + err));
-    });
+        downloadMediaFromList(data, username)
+            .then(() => {
+                console.log(chalk.green("[+] Saved !"));
+            })
+            .catch(err => {
+                console.log(chalk.red("[X] Error: " + err));
+            });
         // listMedia.push(data);
     }
 
@@ -323,6 +346,10 @@ fs.access(folderPath, fs.constants.F_OK, (err) => {
     //     .catch(err => {
     //         console.log(chalk.red("[X] Error: " + err));
     // });
-    
+
 
 })();
+
+
+
+
